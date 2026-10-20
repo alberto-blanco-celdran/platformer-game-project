@@ -1,0 +1,262 @@
+#include "Engine.h"
+#include "Render.h"
+#include "Textures.h"
+#include "Map.h"
+#include "Log.h"
+#include "Physics.h"
+
+#include <iterator>
+
+Map::Map() : Module(), mapLoaded(false)
+{
+	name = "map";
+}
+
+// Destructor
+Map::~Map()
+{}
+
+// Called before render is available
+bool Map::Awake()
+{
+	LOG("Loading Map Parser");
+
+	return true;
+}
+
+bool Map::Start()
+{
+	return true;
+}
+
+bool Map::PostUpdate()
+{
+	bool ret = true;
+
+	if (mapLoaded) {
+
+		// Draw every tile in every layer
+		for (const auto& layer : mapData.layers) {
+			// Helper layers (e.g. the collision mask) are never meant to be
+			// seen -- skip anything Tiled itself marked not visible.
+			if (!layer.visible) continue;
+
+			for (int i = 0; i < mapData.width; i++) {
+				for (int j = 0; j < mapData.height; j++) {
+
+					// Get the gid, look up its rect in the tileset, convert
+					// tile coordinates to world coordinates, then draw
+					int gid = layer.Get(i, j);
+
+					// Look up the right tileset for this gid
+					// instead of always using the first one; also the reason
+					// a gid of 0 (an empty tile) no longer draws garbage
+					const TileSet* tileSet = GetTilesetFromTileId(gid);
+					if (tileSet == nullptr) continue;
+
+					SDL_Rect tileRect = tileSet->GetRect(gid);
+					Vector2D mapCoord = MapToWorld(i, j);
+					Engine::GetInstance().render->DrawTexture(tileSet->texture, (int)mapCoord.getX(), (int)mapCoord.getY(), &tileRect);
+
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
+// Called before quitting
+bool Map::CleanUp()
+{
+	LOG("Unloading map");
+
+	// Unload every tileset's texture
+	for (const auto& tileset : mapData.tilesets) {
+		Engine::GetInstance().textures->UnLoad(tileset.texture);
+	}
+	mapData.tilesets.clear();
+
+	// Clear the layers
+	mapData.layers.clear();
+
+	return true;
+}
+
+// Load new map
+bool Map::Load(std::string path, std::string fileName)
+{
+	bool ret = false;
+
+	// Assigns the name of the map file and the path
+	mapFileName = fileName;
+	mapPath = path;
+	std::string mapPathName = mapPath + mapFileName;
+
+	pugi::xml_document mapFileXML;
+	pugi::xml_parse_result result = mapFileXML.load_file(mapPathName.c_str());
+
+	if (!result)
+	{
+		LOG("Could not load map xml file %s. pugi error: %s", mapPathName.c_str(), result.description());
+		ret = false;
+	}
+	else {
+
+		// Read the <map> node's attributes into mapData
+		pugi::xml_node mapNode = mapFileXML.child("map");
+		mapData.width = mapNode.attribute("width").as_int();
+		mapData.height = mapNode.attribute("height").as_int();
+		mapData.tileWidth = mapNode.attribute("tilewidth").as_int();
+		mapData.tileHeight = mapNode.attribute("tileheight").as_int();
+
+		// Load every <tileset>, including its image; a missing
+		// image fails the whole load instead of silently drawing nothing later
+		ret = true;
+
+		for (pugi::xml_node tilesetNode = mapNode.child("tileset"); tilesetNode; tilesetNode = tilesetNode.next_sibling("tileset"))
+		{
+			TileSet tileSet;
+			tileSet.firstGid = tilesetNode.attribute("firstgid").as_int();
+			tileSet.name = tilesetNode.attribute("name").as_string();
+			tileSet.tileWidth = tilesetNode.attribute("tilewidth").as_int();
+			tileSet.tileHeight = tilesetNode.attribute("tileheight").as_int();
+			tileSet.spacing = tilesetNode.attribute("spacing").as_int();
+			tileSet.margin = tilesetNode.attribute("margin").as_int();
+			tileSet.tileCount = tilesetNode.attribute("tilecount").as_int();
+			tileSet.columns = tilesetNode.attribute("columns").as_int();
+
+			std::string imgName = tilesetNode.child("image").attribute("source").as_string();
+			tileSet.texture = Engine::GetInstance().textures->Load((mapPath + imgName).c_str());
+
+			if (tileSet.texture == NULL) {
+				LOG("Could not load tileset image %s", (mapPath + imgName).c_str());
+				ret = false;
+			}
+
+			mapData.tilesets.push_back(tileSet);
+		}
+
+		// Load every <layer>
+		for (pugi::xml_node layerNode = mapNode.child("layer"); layerNode; layerNode = layerNode.next_sibling("layer"))
+		{
+			// Read one layer's attributes and its tile data
+			MapLayer layer;
+			layer.id = layerNode.attribute("id").as_int();
+			layer.name = layerNode.attribute("name").as_string();
+			layer.width = layerNode.attribute("width").as_int();
+			layer.height = layerNode.attribute("height").as_int();
+			layer.visible = layerNode.attribute("visible").as_bool(true);
+
+			// Load this layer's custom properties
+			LoadProperties(layerNode, layer.properties);
+
+			pugi::xml_node dataNode = layerNode.child("data");
+			for (pugi::xml_node tileNode = dataNode.child("tile"); tileNode; tileNode = tileNode.next_sibling("tile"))
+			{
+				int gid = tileNode.attribute("gid").as_int();
+				layer.tiles.push_back(gid);
+			}
+			mapData.layers.push_back(layer);
+		}
+
+		// Build static colliders from the map's own tile data.
+		for (const auto& layer : mapData.layers)
+		{
+			const Properties::Property* collision = layer.properties.GetProperty("Collision");
+			if (collision == nullptr || !collision->AsBool()) continue;
+
+			for (int i = 0; i < mapData.width; i++) {
+				for (int j = 0; j < mapData.height; j++) {
+
+					int gid = layer.Get(i, j);
+					if (gid == 0) continue;
+
+					Vector2D mapCoord = MapToWorld(i, j);
+					PhysBody* body = Engine::GetInstance().physics->CreateRectangle(
+						(int)mapCoord.getX() + mapData.tileWidth / 2,
+						(int)mapCoord.getY() + mapData.tileHeight / 2,
+						mapData.tileWidth, mapData.tileHeight, bodyType::STATIC);
+					body->ctype = ColliderType::PLATFORM;
+				}
+			}
+		}
+
+
+		// LOG all the data loaded, iterating all tilesets
+		if (ret == true)
+		{
+			LOG("Successfully parsed map XML file: %s", fileName.c_str());
+			LOG("width : %d height : %d", mapData.width, mapData.height);
+			LOG("tile_width : %d tile_height : %d", mapData.tileWidth, mapData.tileHeight);
+			LOG("Tilesets----");
+
+			for (const auto& tileset : mapData.tilesets) {
+				LOG("name : %s firstgid : %d", tileset.name.c_str(), tileset.firstGid);
+				LOG("tile width : %d tile height : %d", tileset.tileWidth, tileset.tileHeight);
+				LOG("spacing : %d margin : %d", tileset.spacing, tileset.margin);
+			}
+
+			// LOG every layer too
+			LOG("Layers----");
+			for (const auto& layer : mapData.layers) {
+				LOG("id : %d name : %s", layer.id, layer.name.c_str());
+				LOG("Layer width : %d Layer height : %d", layer.width, layer.height);
+			}
+		}
+		else {
+			LOG("Error while parsing map file: %s", mapPathName.c_str());
+		}
+
+		if (mapFileXML) mapFileXML.reset();
+	}
+
+	mapLoaded = ret;
+	return ret;
+}
+
+// Translate tile coordinates (i, j) into world (pixel) coordinates
+Vector2D Map::MapToWorld(int x, int y) const
+{
+	Vector2D ret;
+
+	ret.setX((float)(x * mapData.tileWidth));
+	ret.setY((float)(y * mapData.tileHeight));
+
+	return ret;
+}
+
+// Return the tileset a gid belongs to, nullptr if none match
+const TileSet* Map::GetTilesetFromTileId(int gid) const
+{
+	for (const auto& tileset : mapData.tilesets) {
+		if (gid >= tileset.firstGid && gid < tileset.firstGid + tileset.tileCount) {
+			return &tileset;
+		}
+	}
+
+	return nullptr;
+}
+
+// Parse a <properties> node's <property> children into properties
+bool Map::LoadProperties(const pugi::xml_node& node, Properties& properties)
+{
+	for (pugi::xml_node propertyNode : node.child("properties").children("property"))
+	{
+		Properties::Property property;
+		property.name = propertyNode.attribute("name").as_string();
+		property.value = propertyNode.attribute("value").as_string();
+		properties.list.push_back(property);
+	}
+
+	return true;
+}
+
+// Return the map's total size in pixels
+Vector2D Map::GetMapSizeInPixels() const
+{
+	Vector2D sizeInPixels;
+	sizeInPixels.setX((float)(mapData.width * mapData.tileWidth));
+	sizeInPixels.setY((float)(mapData.height * mapData.tileHeight));
+	return sizeInPixels;
+}
