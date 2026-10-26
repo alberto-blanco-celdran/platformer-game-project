@@ -170,7 +170,6 @@ bool Map::Load(std::string path, std::string fileName)
 			if (collisionLayer != nullptr && collisionLayer->value == true) {
 				for (int i = 0; i < mapData.width; i++) {
 					for (int j = 0; j < mapData.height; j++) {
-
 						int gid = layer.Get(i, j);
 						if (gid != 0 && gid == colliderGid) {
 							Vector2D mapCoord = MapToWorld(i, j);
@@ -185,8 +184,7 @@ bool Map::Load(std::string path, std::string fileName)
 				}
 			}
 		}
-		
-
+		// TODO: read object group for colliders
 
 		// L06: TODO 5: LOG all the data loaded, iterating all tilesets
 		if (ret == true)
