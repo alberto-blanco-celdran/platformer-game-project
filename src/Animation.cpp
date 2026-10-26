@@ -1,6 +1,7 @@
 #include "Animation.h"
 #include "Log.h"
 #include "pugixml.hpp"
+#include <iostream>
 
 // --- Animation ---------------------------------------------------------
 

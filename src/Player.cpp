@@ -62,19 +62,19 @@ bool Player::Update(float dt)
 	velocity = Engine::GetInstance().physics->GetLinearVelocity(pbody);
 	velocity = { 0, velocity.y }; // Reset horizontal velocity by default, this way the player stops when no key is pressed
 
-	// L10: TODO 7: Default to the "idle" animation; a key below overrides it
-	anims.SetCurrent("idle");
-
 	// Move left/right
 	if (Engine::GetInstance().input->GetKey(SDL_SCANCODE_A) == KEY_REPEAT) {
 		velocity.x = -speed;
 		// L10: TODO 7: Switch to the "move" animation
 		anims.SetCurrent("move");
-	}
-	if (Engine::GetInstance().input->GetKey(SDL_SCANCODE_D) == KEY_REPEAT) {
+	} else if (Engine::GetInstance().input->GetKey(SDL_SCANCODE_D) == KEY_REPEAT) {
 		velocity.x = speed;
 		// L10: TODO 7: Switch to the "move" animation
 		anims.SetCurrent("move");
+	}
+	else {
+		// L10: TODO 7: Default to the "idle" animation; a key below overrides it
+		anims.SetCurrent("idle");
 	}
 
 	// Apply velocity via helper
