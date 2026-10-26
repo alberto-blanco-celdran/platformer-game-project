@@ -5,6 +5,7 @@
 #include "Vector2D.h"
 #include "pugixml.hpp"
 
+// L08: TODO 2: Add Physics Module
 // Add forward declaration to avoid circular dependency
 class PhysBody;
 
@@ -50,16 +51,21 @@ public:
 		return true;
 	}
 
-	// Module::LoadParameters -- called before Awake()/Start() run so both can read `parameters`.
-	virtual void SetParameters(pugi::xml_node params)
-	{
-		parameters = params;
+	// L10: TODO 4: Store this entity's slice of config.xml, mirroring
+	// Module::LoadParameters
+	virtual void SetParameters(pugi::xml_node p) {
+		parameters = p; 
 	}
 
 	virtual bool Destroy()
 	{
+		pendingToDelete = true;
 		return true;
 	}
+
+	// L08: TODO 2: Add Physics Module
+	// Add OnCollision()/OnCollisionEnd() when a shape on this
+	// entity's body starts/stops touching another shape. 
 
 	virtual void OnCollision(PhysBody* physA, PhysBody* physB) {}
 	virtual void OnCollisionEnd(PhysBody* physA, PhysBody* physB) {}
@@ -94,6 +100,6 @@ public:
 	Vector2D position;
 	bool renderable = true;
 
-	// This entity's slice of config.xml, set via SetParameters()
+	// L10: TODO 4: This entity's slice of config.xml, set via SetParameters()
 	pugi::xml_node parameters;
 };

@@ -32,7 +32,7 @@ bool Render::Awake()
 	float scale = Engine::GetInstance().window->GetScale();
 	SDL_Window* window = Engine::GetInstance().window->window;
 
-	// Load the vsync setting from config.xml
+	// L05: TODO 5: Load the vsync setting from config.xml
 	pugi::xml_attribute vsyncAttr = configParameters.child("vsync").attribute("value");
 	if (vsyncAttr.empty()) {
 		LOG("config.xml: missing render/vsync@value, using default false");

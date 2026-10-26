@@ -9,17 +9,19 @@
 #include "Render.h"
 #include "Textures.h"
 #include "Audio.h"
-#include "Physics.h"
-#include "EntityManager.h"
-#include "Map.h"
 #include "Scene.h"
+#include "Map.h"
+#include "EntityManager.h"
+// L08: TODO 2: Add Physics Module
+#include "Physics.h"
 
 
 // Constructor
 Engine::Engine() {
 
-	LOG("Engine::Engine");
+	LOG("Constructor Engine::Engine");
 
+    // L02: TODO 3: Measure the amount of ms that takes to execute the Engine constructor and LOG the result
     Timer timer = Timer();
 
     // Modules
@@ -28,26 +30,40 @@ Engine::Engine() {
     render = std::make_shared<Render>();
     textures = std::make_shared<Textures>();
     audio = std::make_shared<Audio>();
-    physics = std::make_shared<Physics>();
-    entityManager = std::make_shared<EntityManager>();
     map = std::make_shared<Map>();
     scene = std::make_shared<Scene>();
 
+    // L04: TODO 1: Register the EntityManager module
+    entityManager = std::make_shared<EntityManager>();
+    // L08: TODO 2: Add Physics Module
+	physics = std::make_shared<Physics>();
+
     // Ordered for awake / Start / Update
     // Reverse order of CleanUp
+    // L07: registration order is also Update()/PostUpdate() (draw) order for
+    // every module, so map is registered -- and therefore drawn -- before
+    // scene and before entityManager.
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(input));
     AddModule(std::static_pointer_cast<Module>(textures));
     AddModule(std::static_pointer_cast<Module>(audio));
+
     AddModule(std::static_pointer_cast<Module>(map));
-    AddModule(std::static_pointer_cast<Module>(scene));
+
+    // L04: TODO 1: Register the EntityManager module
     AddModule(std::static_pointer_cast<Module>(entityManager));
-    AddModule(std::static_pointer_cast<Module>(physics));
+    AddModule(std::static_pointer_cast<Module>(scene));
+
+    // L08: TODO 2: Add Physics Module
+    // Register it right before render: registration order is draw order, and
+    // Physics::PostUpdate() draws the F1 debug wireframes
+	AddModule(std::static_pointer_cast<Module>(physics));
 
     // Render last
     AddModule(std::static_pointer_cast<Module>(render));
 
-    LOG("Engine::Engine done in: %f", timer.ReadMSec());
+    // L02: TODO 3: Log the result of the timer
+    LOG("Timer App Constructor(): %f", timer.ReadMSec());
 }
 
 // Static method to get the instance of the Engine class, following the singleton pattern
@@ -64,16 +80,17 @@ void Engine::AddModule(std::shared_ptr<Module> module){
 // Called before render is available
 bool Engine::Awake() {
 
+    // L02: TODO 3: Measure the amount of ms that takes to execute the Awake() and LOG the result
     Timer timer = Timer();
 
     LOG("Engine::Awake");
 	
-	// Load config.xml before any module reads it
+	// L05: TODO 2: Load config.xml before any module reads it
     if (!LoadConfig()) {
         return false;
     }
 
-    // Read the title and target frame rate from the config file
+    // L05: TODO 3: Read the title and target frame rate from the config file
     pugi::xml_node engineNode = configFile.child("config").child("engine");
 
     pugi::xml_attribute titleAttr = engineNode.child("title").attribute("value");
@@ -104,7 +121,8 @@ bool Engine::Awake() {
 		}
     }
 
-    LOG("Engine::Awake done in: %f", timer.ReadMSec());
+    // L02: TODO 3: Log the result of the timer
+    LOG("Timer App Awake(): %f", timer.ReadMSec());
 
     return result;
 }
@@ -112,6 +130,7 @@ bool Engine::Awake() {
 // Called before the first frame
 bool Engine::Start() {
 
+    // L02: TODO 3: Measure the amount of ms that takes to execute the Start() and LOG the result
     Timer timer = Timer();
 
     LOG("Engine::Start");
@@ -125,7 +144,8 @@ bool Engine::Start() {
         }
     }
 
-    LOG("Engine::Start done in: %f", timer.ReadMSec());
+    // L02: TODO 3: Log the result of the timer
+    LOG("Timer App Start(): %f", timer.ReadMSec());
 
     return result;
 }
@@ -155,6 +175,7 @@ bool Engine::Update() {
 // Called before quitting
 bool Engine::CleanUp() {
 
+    // L02: TODO 3: Measure the amount of ms that takes to execute the CleanUp() and LOG the result
     Timer timer = Timer();
 
     LOG("Engine::CleanUp");
@@ -171,7 +192,8 @@ bool Engine::CleanUp() {
         }
     }
 
-    LOG("Engine::Cleanup done in: %f", timer.ReadMSec());
+    // L02: TODO 3: Log the result of the timer
+    LOG("Timer App CleanUp(): %f", timer.ReadMSec());
 
     return result;
 }
@@ -185,9 +207,10 @@ void Engine::PrepareUpdate()
 // ---------------------------------------------
 void Engine::FinishUpdate()
 {
-    // Cap the framerate of the gameloop using maxFrameDuration.
+    // L03: TODO 1: Cap the framerate of the gameloop using maxFrameDuration.
     // Compute how long this frame's work took (frameTime, in ms) and, if it
     // finished early, SDL_Delay() the difference.
+
     float maxFrameDuration = 1000.0f / targetFrameRate;
 	float currenDt = (float) frameTime.ReadMs();
     if (currenDt < maxFrameDuration) {
@@ -195,10 +218,17 @@ void Engine::FinishUpdate()
         //Wait time in ms
         float waitTime = (float) (maxFrameDuration - currenDt);
 
+        // L03: TODO 2: Measure accurately the amount of time SDL_Delay()
+        // actually waits compared to what was expected
         PerfTimer delayTimer = PerfTimer();
+		//SDL_Delay((Uint32)waitTime);
+        //SDL_DelayNS((Uint64)(waitTime * 1000000));
         SDL_DelayPrecise((Uint64)(waitTime*1000000));
+        //LOG("waitTime: %f ms, delayTimer: %f ms, difference: %f", waitTime, delayTimer.ReadMs(), waitTime - delayTimer.ReadMs());
     }
 
+    // L02: TODO 4: Calculate:
+    // Amount of frames since startup
     frameCount++;
 
     // Amount of time since game start (use a low resolution timer)
@@ -285,6 +315,9 @@ bool Engine::PostUpdate()
 // Load config from XML file
 bool Engine::LoadConfig()
 {
+    // L05: TODO 2: Load config.xml with load_file(), and fail loudly if it is
+    // missing, fails to parse, or has no <config> root -- a bad config should
+    // stop the game at startup, not run silently with zeroed-out settings
     pugi::xml_parse_result result = configFile.load_file("config.xml");
 
     if (!result) {

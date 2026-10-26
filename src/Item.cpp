@@ -22,6 +22,8 @@ bool Item::Start() {
 
 	// L08: TODO 4: Add a physics to an item - initialize the physics body
 	pbody = Engine::GetInstance().physics->CreateCircle((int)position.getX() + texW / 2, (int)position.getY() + texH / 2, texW / 2, bodyType::DYNAMIC);
+	pbody->listener = this; // Set the listener to this item instance, it will useful for accesing the class when a collision happens
+
 	// L08: TODO 7: Assign collider type
 	pbody->ctype = ColliderType::ITEM;
 
@@ -48,14 +50,25 @@ bool Item::Draw()
 
 bool Item::CleanUp()
 {
-	Engine::GetInstance().textures->UnLoad(texture);
+	// Release the physics body first, then the texture
+	if (pbody != nullptr)
+	{
+		pbody->listener = nullptr;
+		Engine::GetInstance().physics->DeletePhysBody(pbody);
+		pbody = nullptr;
+	}
+
+	if (texture != nullptr)
+	{
+		Engine::GetInstance().textures->UnLoad(texture);
+		texture = nullptr;
+	}
 	return true;
 }
 
 bool Item::Destroy()
 {
 	LOG("Destroying item");
-	active = false;
 	pendingToDelete = true;
 	return true;
 }

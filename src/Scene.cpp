@@ -25,15 +25,13 @@ bool Scene::Awake()
 	LOG("Loading Scene");
 	bool ret = true;
 
-	// Instantiate the player through the entity manager
+	// L04: TODO 3a: Instantiate the player through the entity manager
 	player = std::dynamic_pointer_cast<Player>(Engine::GetInstance().entityManager->CreateEntity(EntityType::PLAYER));
 
-	// Hand the player its <player> config.xml section -- works
-	// because the L04 pending queue defers Awake()/Start() until later, so
-	// there's a window between construction and Awake() to set this first
-	player->SetParameters(Engine::GetInstance().GetConfigNode("player"));
+	// L10: TODO 4: Hand the player its <player> config.xml section
+	player->SetParameters(Engine::GetInstance().entityManager->configParameters.child("player"));
 
-	// Create an item through the entity manager
+	// L08: TODO 4: Create an item through the entity manager
 	std::shared_ptr<Item> item = std::dynamic_pointer_cast<Item>(Engine::GetInstance().entityManager->CreateEntity(EntityType::ITEM));
 	item->position = Vector2D(150, 200);
 	return ret;
@@ -42,9 +40,9 @@ bool Scene::Awake()
 // Called before the first frame
 bool Scene::Start()
 {
-	Engine::GetInstance().audio->PlayMusic("Assets/Audio/Music/level-iv-339695.wav");
+	//Engine::GetInstance().audio->PlayMusic("Assets/Audio/Music/level-iv-339695.wav");
 
-	// Load the map through the map module
+	// L06: TODO 7: Load the map through the map module
 	Engine::GetInstance().map->Load("Assets/Maps/", "MapTemplate.tmx");
 
 	return true;
@@ -59,16 +57,36 @@ bool Scene::PreUpdate()
 // Called each loop iteration
 bool Scene::Update(float dt)
 {
+	// L03: TODO 3: Make the camera movement independent of framerate.
+	//   - Declare a camSpeed of 200.0f (pixels per second).
+	//   - Multiply camSpeed by dt before adding/subtracting it below.
+	//   - camera.x / camera.y are float (SDL_FRect), so just assign the result.
+	float camSpeed = 200.0f;
+
+	if(Engine::GetInstance().input->GetKey(SDL_SCANCODE_UP) == KEY_REPEAT)
+		Engine::GetInstance().render->camera.y -= camSpeed * dt;
+
+	if(Engine::GetInstance().input->GetKey(SDL_SCANCODE_DOWN) == KEY_REPEAT)
+		Engine::GetInstance().render->camera.y += camSpeed * dt;
+
+	if(Engine::GetInstance().input->GetKey(SDL_SCANCODE_LEFT) == KEY_REPEAT)
+		Engine::GetInstance().render->camera.x -= camSpeed * dt;
+
+	if(Engine::GetInstance().input->GetKey(SDL_SCANCODE_RIGHT) == KEY_REPEAT)
+		Engine::GetInstance().render->camera.x += camSpeed * dt;
+
 	return true;
 }
 
 // Called each loop iteration
 bool Scene::PostUpdate()
 {
-	if(Engine::GetInstance().input->GetKey(SDL_SCANCODE_ESCAPE) == KEY_DOWN)
-		return false;
+	bool ret = true;
 
-	return true;
+	if(Engine::GetInstance().input->GetKey(SDL_SCANCODE_ESCAPE) == KEY_DOWN)
+		ret = false;
+
+	return ret;
 }
 
 // Called before quitting

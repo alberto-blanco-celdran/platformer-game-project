@@ -37,7 +37,6 @@ bool EntityManager::CleanUp()
 
 	for (const auto& entity : entities)
 	{
-		if (entity->active == false) continue;
 		ret = ret && entity->CleanUp();
 	}
 
@@ -51,7 +50,7 @@ std::shared_ptr<Entity> EntityManager::CreateEntity(EntityType type)
 {
 	std::shared_ptr<Entity> entity = nullptr;
 
-	// Instantiate the entity for this type, add it to the
+	// L04: TODO 3a: Instantiate the entity for this type, add it to the
 	// pending queue, and return it -- or return nullptr for an unknown type
 	switch (type)
 	{

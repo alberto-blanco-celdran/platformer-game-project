@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Entity.h"
-#include "Animation.h"
 #include <SDL3/SDL.h>
 #include <box2d/box2d.h>
+#include "Animation.h"
 
 struct SDL_Texture;
 
@@ -28,13 +28,6 @@ public:
 	// L08: TODO 6: Define OnCollision function for the player.
 	void OnCollision(PhysBody* physA, PhysBody* physB);
 
-private:
-
-	// L10: TODO 8: Horizontal-only camera follow -- writes camera.x
-	// directly, in float; the camera is SDL_FRect since L01 so there is no
-	// truncation to avoid and no need to route this through anything else
-	void UpdateCamera();
-
 public:
 
 	// Declare player parameters
@@ -43,13 +36,13 @@ public:
 	int texW, texH;
 
 	// L08: TODO 5: Add physics to the player - declare a Physics body
-	PhysBody* pbody;
+	PhysBody* pbody = nullptr;
 
 private:
 	b2Vec2 velocity;
 	// Audio fx
 	int pickCoinFxId;
 
-	// L10: TODO 4: Player's animation clips, loaded from a TSX in Start()
+	// L10: TODO 5: Player's animation clips, loaded from a TSX in Start()
 	AnimationSet anims;
 };
