@@ -160,6 +160,14 @@ bool Map::Load(std::string path, std::string fileName)
 			mapData.layers.push_back(layer);
 		}
 
+		for (pugi::xml_node objectGroupNode = mapNode.child("objectgroup"); objectGroupNode; objectGroupNode = objectGroupNode.next_sibling("objectgroup"))
+		{
+			MapObjectGroup objectGroup;
+			objectGroup.id = layerNode.attribute("id").as_int();
+			
+			// TODO: read object group for colliders
+		}
+
 		// L09: TODO 8: Create colliders from map metadata
 		// Replace L08 TODO 3 with a loop that builds one
 		// rectangle collider per collider tile, for any layer whose "Collision"
@@ -184,7 +192,6 @@ bool Map::Load(std::string path, std::string fileName)
 				}
 			}
 		}
-		// TODO: read object group for colliders
 
 		// L06: TODO 5: LOG all the data loaded, iterating all tilesets
 		if (ret == true)
