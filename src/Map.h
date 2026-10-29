@@ -48,6 +48,22 @@ struct MapLayer
 	}
 };
 
+struct MapObjectGroup
+{
+	int id;
+	std::string name;
+	std::vector<MapObject> objects;
+};
+
+struct MapObject
+{
+	int id;
+	int x;
+	int y;
+	int width;
+	int height;
+};
+
 // L06: TODO 2: Create a struct to hold information for a TileSet
 // Ignore Terrain Types and Tile Types for now, but we want the image!
 struct TileSet
@@ -88,6 +104,7 @@ struct MapData
 
 	// L07: TODO 2: Add a vector of MapLayer to MapData
 	std::vector<MapLayer> layers;
+	std::vector<MapObjectGroup> objectGroups;
 };
 
 class Map : public Module
