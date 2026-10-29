@@ -80,7 +80,7 @@ bool Physics::PreUpdate()
 		if (!b2Shape_IsValid(e.sensorShapeId) || !b2Shape_IsValid(e.visitorShapeId)) continue;
 		EndContact(e.sensorShapeId, e.visitorShapeId);
 	}
-
+	
 	// --- Contacts (non-sensor) ---
 	const b2ContactEvents contactEvents = b2World_GetContactEvents(world);
 	for (int i = 0; i < contactEvents.beginCount; ++i)

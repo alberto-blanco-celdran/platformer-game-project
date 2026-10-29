@@ -109,6 +109,9 @@ public:
 	// L08: TODO 2: Add Physics Module
 	std::shared_ptr<Physics> physics;
 
+	// Target frame rate, in frames per second.
+	float targetFrameRate = 60;
+
 private:
 	// Delta time in seconds, computed once per frame in FinishUpdate().
 	float dt = 0.0f;
@@ -129,10 +132,7 @@ private:
 	float averageFps = 0.0f;
 	int secondsSinceStartup = 0;
 
-	// Target frame rate, in frames per second.
-	float targetFrameRate = 60;
-
-	std::string gameTitle = "Platformer Game";
+	std::string gameTitle = "Deep Underneath";
 
 	// L05: TODO 2: Declare a pugi::xml_document member to hold config.xml
 	pugi::xml_document configFile;

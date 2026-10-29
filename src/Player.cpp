@@ -28,6 +28,9 @@ bool Player::Awake()
 
 bool Player::Start()
 {
+	//Framerate Capping
+	Engine::GetInstance().targetFrameRate = 60;
+
 	// L10: TODO 5: Read texture, frame size and tuning from config.xml
 	// instead of hardcoding them. GetSize() is not the fix for texW/texH --
 	// the real texture (a spritesheet) would return the whole sheet's size,
@@ -37,8 +40,8 @@ bool Player::Start()
 	texH = parameters.child("frame").attribute("height").as_int();
 
 	// L10: TODO 5: Load this entity's animations from a TSX and set the current animation to "idle".
-	anims.LoadFromTSX(parameters.child("animations").attribute("tsx").as_string(), { {0, "idle"}, {11, "move"}, {22, "jump"} });
-	anims.SetCurrent("idle");
+	anims.LoadFromTSX(parameters.child("animations").attribute("tsx").as_string(), { {0, "idle_Blue"}, {2, "idle_White"}, {4, "idle_Black"}, {5, "idle_Red"}, {11, "move_Blue"}, {13, "move_White"}, {15, "move_Black"}, {18, "move_Red"}/*, {22, "jump"}*/ });
+	anims.SetCurrent("idle_Blue");
 
 	// Initialize audio effect
 	pickCoinFxId = Engine::GetInstance().audio->LoadFx(parameters.child("audiofx").attribute("path").as_string());
@@ -70,15 +73,15 @@ bool Player::Update(float dt)
 	if (Engine::GetInstance().input->GetKey(SDL_SCANCODE_A) == KEY_REPEAT) {
 		velocity.x = -speed;
 		// L10: TODO 7: Switch to the "move" animation
-		anims.SetCurrent("move");
+		anims.SetCurrent("move_Blue");
 	} else if (Engine::GetInstance().input->GetKey(SDL_SCANCODE_D) == KEY_REPEAT) {
 		velocity.x = speed;
 		// L10: TODO 7: Switch to the "move" animation
-		anims.SetCurrent("move");
+		anims.SetCurrent("move_Blue");
 	}
 	else {
 		// L10: TODO 7: Default to the "idle" animation; a key below overrides it
-		anims.SetCurrent("idle");
+		anims.SetCurrent("idle_Blue");
 	}
 
 	// Apply velocity via helper

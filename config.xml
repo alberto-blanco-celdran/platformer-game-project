@@ -1,7 +1,7 @@
 <!-- Config file for the engine -->
 <config>
   <engine>
-    <title value="Platformer Game"/>
+    <title value="Deep Underneath"/>
     <targetFrameRate value="60"/>
   </engine>
 
@@ -21,8 +21,8 @@
        path, movement speed, frame width/height -->
 	<entitymanager>
 		<player>
-			<texture path="Assets/Textures/player2_spritesheet.png"/>
-			<animations tsx="Assets/Textures/player2_spritesheet.tsx"/>
+			<texture path="Assets/Textures/Flipside_Fred.png"/>
+			<animations tsx="Assets/Textures/Flipside_Fred.tsx"/>
 			<movement speed="4.0"/>
 			<frame width="32" height="32"/>
 			<audiofx path="Assets/Audio/Fx/coin-collision-sound-342335.wav"/>
