@@ -163,7 +163,7 @@ bool Map::Load(std::string path, std::string fileName)
 		for (pugi::xml_node objectGroupNode = mapNode.child("objectgroup"); objectGroupNode; objectGroupNode = objectGroupNode.next_sibling("objectgroup"))
 		{
 			MapObjectGroup objectGroup;
-			objectGroup.id = layerNode.attribute("id").as_int();
+			objectGroup.id = objectGroupNode.attribute("id").as_int();
 			
 			// TODO: read object group for colliders
 		}

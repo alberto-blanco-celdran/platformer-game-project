@@ -48,13 +48,6 @@ struct MapLayer
 	}
 };
 
-struct MapObjectGroup
-{
-	int id;
-	std::string name;
-	std::vector<MapObject> objects;
-};
-
 struct MapObject
 {
 	int id;
@@ -62,6 +55,13 @@ struct MapObject
 	int y;
 	int width;
 	int height;
+};
+
+struct MapObjectGroup
+{
+	int id;
+	std::string name;
+	std::vector<MapObject> objects;
 };
 
 // L06: TODO 2: Create a struct to hold information for a TileSet
